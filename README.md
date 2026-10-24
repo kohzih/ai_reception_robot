@@ -21,6 +21,15 @@ DISPLAY=:0 XAUTHORITY=/home/ubuntu/.Xauthority \
   ros2 launch crane_plus_gazebo crane_plus_with_table.launch.py
 ```
 
+Gazebo起動後、別のコンテナ内ターミナルでお辞儀を実行できます。
+
+```bash
+source scripts/load_runtime_env.sh
+"$ROBOT_PYTHON" scripts/robot/bow.py
+```
+
+標準出力はJSON Linesです。`completed`と終了コード0で正常完了を確認できます。`requires_recovery: true`で失敗した場合は、停止状態と正面への復帰を確認するまで再実行を受け付けません。
+
 Docker上で3000番を公開していない場合は、コンテナ外のWSLで共有されたプロジェクトフォルダを開き、次を実行します。コンテナ名の既定値は `pai_ros2`です。
 
 ```bash
