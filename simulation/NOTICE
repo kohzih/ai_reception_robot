@@ -1,0 +1,8 @@
+The simulator launch and table world are adapted from the lecture's installed
+crane_plus_gazebo package (crane_plus_with_table.launch.py and worlds/table.sdf).
+The upstream launch is Copyright 2022 RT Corporation, licensed under the
+Apache License, Version 2.0; see LICENSE.crane_plus.
+
+Changes: project-local world and GUI configuration, sign models, resource paths,
+and argument-based Gazebo process invocation. The robot, controller, and MoveIt
+configuration continue to use the installed lecture packages.

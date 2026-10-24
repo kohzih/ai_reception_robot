@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<sdf version="1.8">
+  <model name="reception_sign">
+    <static>true</static>
+    <link name="sign">
+      <visual name="label">
+        <!-- Local plane X -> world +Y, local Y -> world +Z, front -> +X. -->
+        <pose>0.007 0 0.285 1.5707963267948966 0 1.5707963267948966</pose>
+        <geometry><plane><normal>0 0 1</normal><size>0.28 0.14</size></plane></geometry>
+        <material>
+          <ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse>
+          <pbr><metal>
+            <albedo_map>model://reception_sign/materials/textures/reception_sign.png</albedo_map>
+            <metalness>0</metalness><roughness>1</roughness>
+          </metal></pbr>
+        </material>
+      </visual>
+      <visual name="board">
+        <pose>0 0 0.285 0 0 0</pose>
+        <geometry><box><size>0.012 0.28 0.14</size></box></geometry>
+        <material><ambient>0.15 0.2 0.25 1</ambient><diffuse>0.15 0.2 0.25 1</diffuse></material>
+      </visual>
+      <collision name="board_collision">
+        <pose>0 0 0.285 0 0 0</pose>
+        <geometry><box><size>0.012 0.28 0.14</size></box></geometry>
+      </collision>
+      <visual name="post">
+        <pose>0 0 0.11 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.22</length></cylinder></geometry>
+        <material><ambient>0.15 0.2 0.25 1</ambient><diffuse>0.15 0.2 0.25 1</diffuse></material>
+      </visual>
+      <visual name="foot">
+        <pose>0 0 0.005 0 0 0</pose>
+        <geometry><box><size>0.1 0.12 0.01</size></box></geometry>
+        <material><ambient>0.15 0.2 0.25 1</ambient><diffuse>0.15 0.2 0.25 1</diffuse></material>
+      </visual>
+    </link>
+  </model>
+</sdf>

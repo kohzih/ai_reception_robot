@@ -100,3 +100,10 @@ gestures:
     positions_rad: [0.0, 0.349066, 0.0, 0.0]
     duration_sim_sec: 2.0
     pause_wall_sec: 0.5
+  # simulation/gui.config looks from +X: +Y is screen right, -Y is left.
+  reception:
+    base_yaw_rad: 1.570796
+    duration_sim_sec: 2.0
+  hall:
+    base_yaw_rad: -1.570796
+    duration_sim_sec: 2.0
