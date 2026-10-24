@@ -1,0 +1,17 @@
+[
+  { "id": "greeting_1", "expected": "greeting", "input": "こんにちは。" },
+  { "id": "greeting_2", "expected": "greeting", "input": "おはようございます。" },
+  { "id": "greeting_3", "expected": "greeting", "input": "こんばんは。" },
+  { "id": "reception_1", "expected": "reception", "input": "参加受付はどこですか？" },
+  { "id": "reception_2", "expected": "reception", "input": "参加登録の手続きをしたいです。" },
+  { "id": "reception_3", "expected": "reception", "input": "申し込みの確認はどこでできますか？" },
+  { "id": "hall_1", "expected": "hall", "input": "発表を聞く場所を教えてください。" },
+  { "id": "hall_2", "expected": "hall", "input": "受付は済んだので、講演を聞きに行きたいです。" },
+  { "id": "hall_3", "expected": "hall", "input": "こんにちは、講演会場はどちらですか？" },
+  { "id": "unknown_1", "expected": "unknown", "input": "どこに行けばいいですか？" },
+  { "id": "unknown_2", "expected": "unknown", "input": "トイレはどこですか？" },
+  { "id": "unknown_3", "expected": "unknown", "input": "受付と講演会場を両方教えてください。" },
+  { "id": "outside_1", "expected": "unknown", "input": "駐車場はどちらですか？" },
+  { "id": "outside_2", "expected": "unknown", "input": "講演会場の近くにあるトイレを教えて" },
+  { "id": "negation_1", "expected": "hall", "input": "トイレではなく、講演会場を探しています" }
+]
