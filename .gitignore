@@ -1,0 +1,39 @@
+# Local settings and credentials
+/.bundle/
+/.env
+/.env.*
+!/.env.example
+/config/master.key
+/config/credentials/*.key
+/.kamal/secrets
+
+# Runtime files
+/log/*
+!/log/.keep
+/tmp/*
+!/tmp/.keep
+!/tmp/pids/
+/tmp/pids/*
+!/tmp/pids/.keep
+/storage/*
+!/storage/.keep
+/public/assets/
+/vendor/bundle/
+*.sqlite3
+*.sqlite3-*
+
+# Python and recordings
+__pycache__/
+*.py[cod]
+*.mp4
+*.webm
+*.mov
+
+# Editors
+/.idea/
+/.vscode/
+.DS_Store
+
+# Local working notes
+/docs/
+/doc/
