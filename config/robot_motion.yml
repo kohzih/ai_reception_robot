@@ -95,5 +95,8 @@ cancellation:
   automatic_return_home: false
   automatic_retry: false
 
-# Add gesture targets only after validating their motion in Gazebo.
-gestures: {}
+gestures:
+  bow:
+    positions_rad: [0.0, 0.349066, 0.0, 0.0]
+    duration_sim_sec: 2.0
+    pause_wall_sec: 0.5

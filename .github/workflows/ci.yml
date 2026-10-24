@@ -6,6 +6,17 @@ on:
     branches: [ main ]
 
 jobs:
+  robot_policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Test robot policy without ROS
+        run: |
+          python3 -m venv "$RUNNER_TEMP/robot-policy"
+          "$RUNNER_TEMP/robot-policy/bin/python" -m pip install "PyYAML>=5.4,<7"
+          "$RUNNER_TEMP/robot-policy/bin/python" -m unittest discover -s test/robot -v
+
   scan_ruby:
     runs-on: ubuntu-latest
 
