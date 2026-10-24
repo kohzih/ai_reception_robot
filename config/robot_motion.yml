@@ -1,0 +1,99 @@
+schema_version: 1
+robot: crane_plus_v2
+simulation_only: true
+
+control:
+  interface: follow_joint_trajectory
+  action_type: control_msgs/action/FollowJointTrajectory
+  trajectory_type: trajectory_msgs/msg/JointTrajectory
+  use_sim_time: true
+  clock_topic: /clock
+  joint_states_topic: /joint_states
+  joint_state_lookup: name
+  allow_partial_joints_goal: false
+  position_unit: rad
+  velocity_unit: rad/s
+
+controllers:
+  arm:
+    node: /crane_plus_arm_controller
+    action: /crane_plus_arm_controller/follow_joint_trajectory
+    command_topic: /crane_plus_arm_controller/joint_trajectory
+    state_topic: /crane_plus_arm_controller/controller_state
+    joints:
+      - crane_plus_joint1
+      - crane_plus_joint2
+      - crane_plus_joint3
+      - crane_plus_joint4
+  gripper:
+    node: /crane_plus_gripper_controller
+    action: /crane_plus_gripper_controller/follow_joint_trajectory
+    command_topic: /crane_plus_gripper_controller/joint_trajectory
+    state_topic: /crane_plus_gripper_controller/controller_state
+    joints:
+      - crane_plus_joint_hand
+
+# Revolute joint limits from the robot model, in radians and radians/second.
+joint_limits:
+  crane_plus_joint1:
+    lower: -2.6179916666666663
+    upper: 2.6179916666666663
+    max_velocity: 2.0
+  crane_plus_joint2:
+    lower: -1.8247401916666663
+    upper: 1.7837249888888889
+    max_velocity: 2.0
+  crane_plus_joint3:
+    lower: -2.5565561288888885
+    upper: 2.454279921111111
+    max_velocity: 2.0
+  crane_plus_joint4:
+    lower: -1.8400990761111107
+    upper: 1.768366104444444
+    max_velocity: 2.0
+  crane_plus_joint_hand:
+    lower: -0.7089521433333332
+    upper: 0.6679369405555557
+    max_velocity: 2.0
+
+# Upright arm with the base at zero yaw, facing the default Gazebo camera.
+reference_pose:
+  arm_positions_rad: [0.0, 0.0, 0.0, 0.0]
+
+goal_constraints:
+  path_position_tolerance_rad: 0.2
+  goal_position_tolerance_rad: 0.03
+  goal_time_tolerance_sim_sec: 1.0
+
+completion:
+  required_action_status: SUCCEEDED
+  required_result_error_code: 0
+  position_tolerance_rad: 0.03
+  stopped_velocity_rad_s: 0.01
+  settle_wall_sec: 0.2
+  minimum_settle_samples: 5
+  joint_state_max_age_wall_sec: 0.5
+  require_sample_after_goal: true
+  require_progressing_clock: true
+
+timeouts:
+  server_discovery_wall_sec: 5.0
+  joint_state_wait_wall_sec: 2.0
+  goal_response_wall_sec: 3.0
+  per_goal_wall_sec: 10.0
+  motion_wall_sec: 30.0
+  clock_stall_wall_sec: 1.0
+  cancel_response_wall_sec: 2.0
+  cancel_result_wall_sec: 2.0
+  stop_observation_wall_sec: 2.0
+
+cancellation:
+  scope: current_goal_uuid
+  required_terminal_status: CANCELED
+  require_stopped_joint_states: true
+  recovery_required_if_unconfirmed: true
+  automatic_return_home: false
+  automatic_retry: false
+
+# Add gesture targets only after validating their motion in Gazebo.
+gestures: {}
