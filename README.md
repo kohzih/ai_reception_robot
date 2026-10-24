@@ -1,6 +1,6 @@
 # AI受付ロボット
 
-Rails・Cloudflare Clef・ROS 2・CRANE+ V2を組み合わせ、来訪者の日本語入力に応じて身振りで案内するアプリです。現在はRailsのひな形と、お辞儀・受付案内・講演会場案内の単独動作を実装しています。
+Rails・Cloudflare Clef・ROS 2・CRANE+ V2を組み合わせ、来訪者の日本語入力に応じて身振りで案内するアプリです。現在はRailsのひな形と、お辞儀・受付案内・講演会場案内・保留の合図の単独動作を実装しています。
 
 Ruby **3.4.11**、Rails **8.1.4**、SQLiteを使用します。開発環境は講義用Dockerイメージ `airobotbook/ros2-desktop-ai-robot-book-humble:latest`です。
 
@@ -47,7 +47,15 @@ source scripts/load_runtime_env.sh
 "$ROBOT_PYTHON" scripts/robot/hall.py
 ```
 
-各コマンドは1つずつ実行し、正常終了を確認してから次を実行します。各移動はシミュレーション時間で2秒の軌道で、お辞儀は約20度、静止時間は実時間で0.5秒です。角度と時間は `config/robot_motion.yml` に保存されています。
+保留の合図（正面の直立姿勢で、閉じる → 開くを2回）：
+
+```bash
+"$ROBOT_PYTHON" scripts/robot/hold.py
+```
+
+保留の合図は、最初にグリッパーを開いた状態へそろえ、2回の開閉後も開いた状態で終了します。所要時間は約16秒です。
+
+各コマンドは1つずつ実行し、正常終了を確認してから次を実行します。アームの移動はシミュレーション時間で2秒、お辞儀は約20度、保持は実時間で0.5秒です。保留時のグリッパー移動はシミュレーション時間で1.5秒、各移動後の保持は実時間で0.4秒です。角度と時間は `config/robot_motion.yml` に保存されています。
 
 標準出力はJSON Linesです。`completed`と終了コード0で正常完了を確認できます。`requires_recovery: true`で失敗した場合は、停止状態と正面への復帰を確認するまで再実行を受け付けません。
 

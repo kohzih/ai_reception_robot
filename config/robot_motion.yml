@@ -107,3 +107,9 @@ gestures:
   hall:
     base_yaw_rad: -1.570796
     duration_sim_sec: 2.0
+  hold:
+    open_positions_rad: [-0.6]
+    closed_positions_rad: [0.6]
+    arm_duration_sim_sec: 2.0
+    gripper_duration_sim_sec: 1.5
+    pause_wall_sec: 0.4
