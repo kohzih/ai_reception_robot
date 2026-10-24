@@ -7,10 +7,18 @@ Ruby **3.4.11**、Rails **8.1.4**、SQLiteを使用します。開発環境は�
 コンテナ内のプロジェクトフォルダで起動します。
 
 ```bash
-source scripts/load_ruby_env.sh
+source scripts/load_runtime_env.sh
 bundle install
 bin/rails db:prepare
 bin/rails server -b 0.0.0.0 -p 3000
+```
+
+シミュレータは、別のコンテナ内ターミナルで起動します。
+
+```bash
+source scripts/load_runtime_env.sh
+DISPLAY=:0 XAUTHORITY=/home/ubuntu/.Xauthority \
+  ros2 launch crane_plus_gazebo crane_plus_with_table.launch.py
 ```
 
 Docker上で3000番を公開していない場合は、コンテナ外のWSLで共有されたプロジェクトフォルダを開き、次を実行します。コンテナ名の既定値は `pai_ros2`です。
