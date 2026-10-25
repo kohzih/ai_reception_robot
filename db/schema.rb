@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_25_040000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_25_050000) do
   create_table "robot_runs", force: :cascade do |t|
     t.string "browser_id", null: false
     t.text "input_text", null: false
@@ -40,6 +40,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_25_040000) do
     t.datetime "command_sent_at"
     t.datetime "motion_completed_at"
     t.json "robot_events", default: [], null: false
+    t.datetime "recovered_at"
+    t.json "recovery_details", default: {}, null: false
+    t.json "robot_process", default: {}, null: false
     t.index ["browser_id", "created_at", "id"], name: "index_robot_runs_on_browser_id_and_created_at_and_id"
   end
 
@@ -51,6 +54,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_25_040000) do
     t.boolean "worker_accepting", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "maintenance", default: false, null: false
+    t.datetime "recovery_checked_at"
     t.index ["current_run_id"], name: "index_robot_states_on_current_run_id"
     t.check_constraint "id = 1", name: "robot_state_singleton"
   end

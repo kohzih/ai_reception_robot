@@ -65,16 +65,18 @@ class LiveProcessInputJobTest < ActiveSupport::TestCase
   end
 
   test "API errors do not construct an executor and allow another input" do
-    Rails.configuration.x.clef_client_factory = -> { raise ClefClient::Error.new("authentication_error", "hidden") }
     Rails.configuration.x.robot_executor_factory = -> { flunk "API error must never launch Python" }
-    run = submit_test_run
-    perform_enqueued_jobs
-    assert_equal "classification_failed", run.reload.status
-    assert_equal "authentication_error", run.error_code
-    assert_nil run.command_sent_at
-    assert_nil run.action
-    assert_equal [], run.robot_events
-    assert_equal "idle", RobotState.singleton.status
+    %w[connection_error authentication_error rate_limited server_error timeout invalid_response api_error].each do |code|
+      Rails.configuration.x.clef_client_factory = -> { raise ClefClient::Error.new(code, "hidden") }
+      run = submit_test_run
+      perform_enqueued_jobs
+      assert_equal "classification_failed", run.reload.status
+      assert_equal code, run.error_code
+      assert_nil run.command_sent_at
+      assert_nil run.action
+      assert_equal [], run.robot_events
+      assert_equal "idle", RobotState.singleton.status
+    end
   end
 
   test "the default client handles missing credentials without starting Python" do

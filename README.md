@@ -26,9 +26,43 @@ Gazeboも起動した状態で、ブラウザから http://localhost:3000 を開
 
 入力と処理状況はDBへ保存し、このブラウザの最近50件を表示します。再読み込み後も履歴と処理状況を確認でき、別のブラウザとは履歴を分けます。処理中は全画面からの追加受付を停止し、画面は約1秒ごとに状態を更新します。
 
-ワーカー停止中は受付できません。APIエラーではロボットへ指令を送らず、再入力を受け付けます。動作失敗や処理中のワーカー停止・再起動では、未完了の処理を自動で再実行せず、確認が済むまで受付を停止します。現在は画面からの復旧操作を実装していません。
+ワーカー停止中は受付できません。APIエラーではロボットへ指令を送らず、再入力を受け付けます。動作失敗や処理中のワーカー停止・再起動では、未完了の処理を自動で再実行せず、確認が済むまで受付を停止します。復帰操作はコンテナ内の管理コマンドから行います。
 
 画面表示だけを確認する場合は、Railsを起動するシェルで `export RECEPTION_MODE=preview` を設定し、ワーカーは `bin/jobs start`で起動します。約4秒の仮処理で7種類の応答例を確認でき、APIやロボットは呼び出しません。実動作へ戻すときは `RECEPTION_MODE=live`でRailsを再起動します。モードはサーバーが決定します。
+
+異常後の復帰は、ワーカーと同じユーザーで共通環境を読み込み、受付を停止してから行います。
+
+```bash
+source scripts/load_runtime_env.sh
+bin/rails runner scripts/robot_admin.rb -- pause
+```
+
+ワーカーのターミナルで `Ctrl+C`を押して停止し、現在の実行ID・指令・Pythonプロセスを確認します。
+
+```bash
+bin/rails runner scripts/robot_admin.rb -- status
+```
+
+Pythonが残っている場合は、表示された実行IDを指定します。PIDと起動時刻が一致するプロセスだけを終了します。プロセス終了だけではアーム停止として扱いません。
+
+```bash
+bin/rails runner scripts/robot_admin.rb -- stop-process --run-id 123
+```
+
+同じ実行IDで復帰を確認します。`--home`は、記録した指令の取消と停止を確認した後に、正面姿勢とグリッパーの開きへ戻す明示操作です。
+
+```bash
+bin/rails runner scripts/robot_admin.rb -- recover --run-id 123 --home
+```
+
+状態が不明な場合はGazebo一式を停止し、下記の起動方法で再起動してから、`recover`に `--after-simulator-restart`も付けます。新しい関節状態・時計・コントローラー・他の指令送信元を確認し、古いジョブを無効化してから復帰します。失敗時は受付停止を維持します。
+
+最後に受付を再開し、実API用ワーカーを起動します。Gazebo再起動直後は `resume`にも `--after-simulator-restart`を付けます。現在の実行IDがない場合は `recover`と `stop-process`を省略できます。
+
+```bash
+bin/rails runner scripts/robot_admin.rb -- resume
+bin/robot-worker --interactive
+```
 
 シミュレータは、別のコンテナ内ターミナルで起動します。
 

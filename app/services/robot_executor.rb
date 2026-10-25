@@ -43,6 +43,12 @@ class RobotExecutor
     raise Failure, "reservation_lost" unless child
     @stdin, @stdout, @stderr, @waiter = child
     @stdin.close
+    if @on_event
+      identity = RobotProcessIdentity.read(@waiter.pid)
+      raise Failure, "process_identity_unavailable" unless identity
+      accepted = @on_event.call(identity.merge("event" => "process_started", "motion" => action))
+      raise Failure, "reservation_lost" unless accepted
+    end
     read_process(continuing)
     status = @waiter.value
     @exit_code = status.exitstatus

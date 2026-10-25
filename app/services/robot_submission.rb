@@ -12,6 +12,9 @@ class RobotSubmission
     run.preview_scenario = nil unless run.preview?
     raise ActiveRecord::RecordInvalid, run unless run.valid?
     state = RobotState.reconcile!
+    if state.maintenance?
+      raise Unavailable.new("ただいま受付を停止しています。", http_status: 503)
+    end
     if state.status != "idle"
       raise Unavailable.new("ほかの受付処理中、または再開前の確認が必要です。", http_status: 409)
     end
@@ -21,7 +24,7 @@ class RobotSubmission
     epoch = state.worker_epoch
     job = nil
     RobotState.transaction do
-      claimed = RobotState.where(id: 1, status: "idle", worker_epoch: epoch, worker_accepting: true)
+      claimed = RobotState.where(id: 1, status: "idle", worker_epoch: epoch, worker_accepting: true, maintenance: false)
                           .update_all(status: "reserved", updated_at: Time.current)
       raise Unavailable.new("ほかの受付処理中です。完了までお待ちください。", http_status: 409) unless claimed == 1
       run.worker_epoch = epoch

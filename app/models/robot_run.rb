@@ -3,13 +3,13 @@ class RobotRun < ApplicationRecord
   HISTORY_LIMIT = 50
   before_validation :normalize_line_endings
   ACTIVE_STATUSES = %w[queued classifying dispatching moving].freeze
-  STATUSES = (ACTIVE_STATUSES + %w[previewed preview_error completed classification_failed enqueue_failed robot_failed recovery_required]).freeze
+  STATUSES = (ACTIVE_STATUSES + %w[previewed preview_error completed classification_failed enqueue_failed robot_failed recovery_required recovered]).freeze
   STATUS_LABELS = {
     "queued" => "確認待ち（仮処理）", "classifying" => "ご用件を確認中（仮処理）",
     "dispatching" => "仮応答を準備中", "previewed" => "仮応答を表示しました", "preview_error" => "失敗表示の例",
     "classification_failed" => "判断処理の失敗（表示例）", "enqueue_failed" => "受付できませんでした",
     "robot_failed" => "動作失敗の表示例・確認が必要です", "recovery_required" => "再開前の確認が必要です",
-    "moving" => "指令送信済み", "completed" => "動作完了を確認しました"
+    "moving" => "指令送信済み", "completed" => "動作完了を確認しました", "recovered" => "復帰確認済み"
   }.freeze
 
   validates :browser_id, presence: true

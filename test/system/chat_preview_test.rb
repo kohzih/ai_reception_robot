@@ -207,6 +207,18 @@ class ChatPreviewSystemTest < ApplicationSystemTestCase
     assert_equal 0, RobotRun.count
   end
 
+  test "administrator pause persists across reload and blocks keyboard submission" do
+    visit root_path
+    fill_in "メッセージ", with: "停止中の送信"
+    RobotState.pause!
+    refresh
+    assert_text "ただいま受付を停止しています。"
+    assert_button "仮応答を確認", disabled: true
+    find_field("メッセージ").send_keys(:enter)
+    assert_no_selector ".conversation-entry"
+    assert_equal 0, RobotRun.uncached { RobotRun.count }
+  end
+
   private
 
   def set_message(text)

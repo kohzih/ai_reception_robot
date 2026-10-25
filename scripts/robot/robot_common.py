@@ -416,7 +416,8 @@ def run_gesture(name, execute):
         recovery = dispatched or getattr(error, "code", "") == "recovery_required"
         if dispatched:
             record = {"motion": name, "code": getattr(error, "code", "internal_error"),
-                      "stop_confirmed": stop_confirmed, "goal_id": session.pending["uuid"] if session.pending else None}
+                      "stop_confirmed": stop_confirmed, "goal_id": session.pending["uuid"] if session.pending else None,
+                      "controller": session.pending["controller"] if session.pending else None}
             try:
                 (APP_ROOT / "tmp/robot_recovery_required.json").write_text(json.dumps(record) + "\n")
             except OSError as record_error:
