@@ -24,7 +24,8 @@ class ChatsController < ApplicationController
 
   def show
     run = browser_runs.find(params[:id])
-    render json: run.as_json(only: %i[id preview preview_scenario status intent confidence action response_text error_code started_at finished_at])
+    render json: run.as_json(only: %i[id preview preview_scenario status intent confidence action response_text error_code started_at finished_at
+                                     selection_reason classification_duration_ms robot_duration_ms robot_exit_code command_sent_at motion_completed_at])
                     .merge("status_label" => run.status_label)
   end
 

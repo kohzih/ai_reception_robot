@@ -1,4 +1,5 @@
 ENV["RAILS_ENV"] ||= "test"
+ENV["RECEPTION_MODE"] = "preview"
 require_relative "../config/environment"
 require "rails/test_help"
 

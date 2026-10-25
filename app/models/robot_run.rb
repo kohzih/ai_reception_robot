@@ -22,6 +22,13 @@ class RobotRun < ApplicationRecord
   scope :for_browser, ->(browser_id) { where(browser_id: browser_id) }
 
   def status_label
+    unless preview?
+      return {
+        "queued" => "確認待ち", "classifying" => "ご用件を確認中",
+        "dispatching" => "動作の準備中", "classification_failed" => "判断処理に失敗しました",
+        "robot_failed" => "動作の実行に失敗しました・確認が必要です"
+      }.fetch(status) { STATUS_LABELS.fetch(status) }
+    end
     STATUS_LABELS.fetch(status)
   end
 

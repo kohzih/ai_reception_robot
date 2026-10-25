@@ -115,6 +115,36 @@ class RobotState < ApplicationRecord
     end
   end
 
+  # Keep the launch itself inside the reservation transaction, not the motion.
+  def self.with_dispatch_permission(run_id, epoch)
+    locked do |state|
+      next false unless owner?(state, run_id, epoch) && state.status == "processing" &&
+                        state.worker_accepting? && state.current_run.status == "dispatching"
+      yield
+    end
+  end
+
+  def self.execution_permitted?(run_id, epoch)
+    state = singleton
+    owner?(state, run_id, epoch) && state.status == "processing" && state.worker_accepting? && state.worker_online?
+  end
+
+  def self.record_event!(run_id, epoch, event)
+    locked do |state|
+      next false unless owner?(state, run_id, epoch) && state.status == "processing" && state.worker_accepting?
+      run = state.current_run
+      next false unless %w[dispatching moving].include?(run.status)
+      attributes = { robot_events: run.robot_events + [ event ] }
+      if event["event"] == "command_sent"
+        attributes.merge!(status: "moving", command_sent_at: run.command_sent_at || Time.current)
+      elsif event["event"] == "completed"
+        attributes[:motion_completed_at] = Time.current
+      end
+      run.update!(attributes)
+      true
+    end
+  end
+
   def self.fail_enqueue!(run_id, epoch)
     locked do |state|
       next unless owner?(state, run_id, epoch)

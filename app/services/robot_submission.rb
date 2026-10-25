@@ -8,7 +8,8 @@ class RobotSubmission
   end
 
   def self.call(browser_id:, attributes:)
-    run = RobotRun.new(attributes.merge(browser_id: browser_id, preview: true))
+    run = RobotRun.new(attributes.merge(browser_id: browser_id, preview: ReceptionMode.preview?))
+    run.preview_scenario = nil unless run.preview?
     raise ActiveRecord::RecordInvalid, run unless run.valid?
     state = RobotState.reconcile!
     if state.status != "idle"

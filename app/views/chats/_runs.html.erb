@@ -5,7 +5,7 @@
     </div>
     <div class="assistant-message">
       <span class="assistant-avatar"><%= render "shared/robot_icon" %></span>
-      <div><div class="message-meta"><span>受付ガイド</span><span class="preview-label">仮応答</span></div><p class="bubble assistant-bubble <%= "error-bubble" if run.error_code.present? %>"><%= run.response_text.presence || run.status_label %></p><p class="response-caption"><%= PreviewResponse::SCENARIOS.fetch(run.preview_scenario).fetch(:label) %>の表示例 · <%= run.status_label %></p></div>
+      <div><div class="message-meta"><span>受付ガイド</span><span class="preview-label"><%= run.preview? ? "仮応答" : "AI受付" %></span></div><p class="bubble assistant-bubble <%= "error-bubble" if run.error_code.present? %>"><%= run.response_text.presence || run.status_label %></p><p class="response-caption"><% if run.preview? %><%= PreviewResponse::SCENARIOS.fetch(run.preview_scenario).fetch(:label) %>の表示例 · <% end %><%= run.status_label %></p></div>
     </div>
   </article>
 <% end %>

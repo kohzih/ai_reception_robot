@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+require "io/console"
+require_relative "../app/services/clef_client"
+
+begin
+  unless ARGV.empty? || ARGV == [ "--interactive" ]
+    abort "使い方: bin/robot-worker [--interactive]"
+  end
+  account, token = ENV.values_at("CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN")
+  if ARGV == [ "--interactive" ]
+    console = IO.console
+    abort "対話入力にはコンテナ内のターミナルが必要です。" unless console
+    console.print "Cloudflare Account ID: "
+    console.flush
+    account = console.gets&.strip
+    console.print "Workers AI API token（非表示）: "
+    console.flush
+    begin
+      token = console.noecho(&:gets)&.strip
+    ensure
+      console.puts
+    end
+  end
+  ClefClient.new(account_id: account, api_token: token)
+  puts "認証情報の形式を確認しました（APIへの通信は起動後の受付時）。ワーカーを起動します。"
+  $stdout.flush
+  exec({ "CLOUDFLARE_ACCOUNT_ID" => account, "CLOUDFLARE_API_TOKEN" => token }, File.expand_path("jobs", __dir__), "start")
+rescue ClefClient::Error => error
+  warn "#{error.code}: #{error.message}"
+  exit 1
+rescue Interrupt
+  warn "起動を中断しました。"
+  exit 130
+end

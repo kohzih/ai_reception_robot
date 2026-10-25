@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["input", "counter", "submit", "status", "messages", "scenario", "errors", "history"]
-  static values = { maxCharacters: Number, available: Boolean, stateMessage: String, historyVersion: String, stateUrl: String, historyUrl: String }
+  static values = { maxCharacters: Number, available: Boolean, stateMessage: String, historyVersion: String, stateUrl: String, historyUrl: String, sendLabel: { type: String, default: "仮応答を確認 ↑" } }
 
   connect() {
     this.busy = false
@@ -29,15 +29,15 @@ export default class extends Controller {
     const blocked = this.busy || !this.availableValue || this.deliveryUncertain
     this.submitTarget.disabled = blank || tooLong || blocked
     this.inputTarget.readOnly = blocked
-    this.scenarioTarget.disabled = blocked
+    if (this.hasScenarioTarget) this.scenarioTarget.disabled = blocked
     this.statusTarget.textContent = this.deliveryUncertain ? "送信結果を確認できません。再読み込みしてください。" : (this.busy ? "受付中…" : this.stateMessageValue)
-    this.submitTarget.textContent = this.busy ? "受付中…" : "仮応答を確認 ↑"
+    this.submitTarget.textContent = this.busy ? "受付中…" : this.sendLabelValue
   }
 
   example({ params }) {
     if (this.busy || !this.availableValue || this.deliveryUncertain) return
     this.inputTarget.value = params.text
-    this.scenarioTarget.value = params.scenario
+    if (this.hasScenarioTarget) this.scenarioTarget.value = params.scenario
     this.update()
     this.inputTarget.focus()
   }
