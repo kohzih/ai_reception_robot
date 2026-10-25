@@ -3,7 +3,7 @@
   <meta name="turbo-cache-control" content="no-cache">
 <% end %>
 
-<div class="page-shell" data-controller="chat" data-chat-max-characters-value="<%= RobotRun::MAX_INPUT_CHARACTERS %>">
+<div class="page-shell" data-controller="chat" data-chat-max-characters-value="<%= RobotRun::MAX_INPUT_CHARACTERS %>" data-chat-available-value="<%= @screen[:available] %>" data-chat-state-message-value="<%= @screen[:message] %>" data-chat-history-version-value="<%= @screen[:history_version] %>" data-chat-state-url-value="<%= chat_state_path %>" data-chat-history-url-value="<%= chat_history_path %>">
   <header class="site-header">
     <a href="<%= root_path %>" class="brand" aria-label="受付ガイド ホーム">
       <span class="brand-mark"><%= render "shared/robot_icon" %></span>
@@ -20,33 +20,21 @@
     <section class="chat-panel" aria-labelledby="conversation-heading">
       <div class="panel-header">
         <div><span class="section-dot"></span><h2 id="conversation-heading">受付ガイドとの会話</h2></div>
-        <span class="input-status" role="status" data-chat-target="status">入力できます</span>
+        <span class="input-status" role="status" data-chat-target="status"><%= @screen[:message] %></span>
       </div>
       <div class="messages" role="log" aria-label="会話の履歴" data-chat-target="messages">
         <div class="welcome-message">
           <span class="assistant-avatar"><%= render "shared/robot_icon" %></span>
           <div><p class="sender-name">受付ガイド</p><div class="bubble assistant-bubble">こんにちは。受付や講演会場へのご案内をお手伝いします。<br>下の入力例から、仮応答の表示をお試しいただけます。</div></div>
         </div>
-        <% @runs.each do |run| %>
-          <article class="conversation-entry" id="<%= dom_id(run) %>">
-            <div class="visitor-message">
-              <div><div class="message-meta"><span>あなた</span><time datetime="<%= run.created_at.iso8601 %>"><%= run.created_at.in_time_zone("Asia/Tokyo").strftime("%H:%M") %></time></div><p class="bubble visitor-bubble"><%= run.input_text %></p></div>
-            </div>
-            <div class="assistant-message">
-              <span class="assistant-avatar"><%= render "shared/robot_icon" %></span>
-              <div><div class="message-meta"><span>受付ガイド</span><span class="preview-label">仮応答</span></div><p class="bubble assistant-bubble <%= "error-bubble" if run.error_code.present? %>"><%= run.response_text %></p><p class="response-caption"><%= PreviewResponse::SCENARIOS.fetch(run.preview_scenario).fetch(:label) %>の表示例</p></div>
-            </div>
-          </article>
-        <% end %>
+        <%= turbo_frame_tag "chat_history", data: { chat_target: "history", action: "turbo:frame-load->chat#historyLoaded" } do %><%= render "runs" %><% end %>
         <p class="history-note">このブラウザの最近<%= RobotRun::HISTORY_LIMIT %>件までの履歴を表示します。</p>
       </div>
       <div class="composer">
-        <% if @robot_run.errors.any? %>
-          <div class="form-errors" role="alert" data-chat-target="errors">
+        <div class="form-errors" role="alert" data-chat-target="errors" <%= "hidden" unless @robot_run.errors.any? %>>
             <% @robot_run.errors.map(&:message).uniq.each do |message| %><p><%= message %></p><% end %>
-          </div>
-        <% end %>
-        <%= form_with model: @robot_run, url: chat_path, id: "chat-form", data: { action: "turbo:submit-start->chat#submitting turbo:submit-end->chat#submitted" } do |form| %>
+        </div>
+        <%= form_with model: @robot_run, url: chat_path, id: "chat-form", data: { turbo: false, action: "submit->chat#send" } do |form| %>
           <div class="composer-labels">
             <%= form.label :input_text, "メッセージ", class: "field-label" %>
             <div class="scenario-field"><%= form.label :preview_scenario, "確認する仮応答" %><%= form.select :preview_scenario, PreviewResponse::SCENARIOS.map { |key, value| [ value.fetch(:label), key ] }, {}, data: { chat_target: "scenario" } %></div>
@@ -54,7 +42,7 @@
           <%= form.text_area :input_text, rows: 3, required: true, placeholder: "例：参加受付はどこですか？", aria: { describedby: "message-help message-counter", invalid: @robot_run.errors[:input_text].any? }, data: { chat_target: "input", action: "input->chat#update" } %>
           <div class="composer-footer">
             <span id="message-help">選んだ応答例を表示します。</span>
-            <div><span id="message-counter" data-chat-target="counter">0 / <%= RobotRun::MAX_INPUT_CHARACTERS %></span><%= form.button type: "submit", class: "send-button", data: { chat_target: "submit", turbo_submits_with: "表示中…" } do %>仮応答を確認<span aria-hidden="true">↑</span><% end %></div>
+            <div><span id="message-counter" data-chat-target="counter">0 / <%= RobotRun::MAX_INPUT_CHARACTERS %></span><%= form.button type: "submit", class: "send-button", data: { chat_target: "submit" } do %>仮応答を確認<span aria-hidden="true">↑</span><% end %></div>
           </div>
         <% end %>
       </div>

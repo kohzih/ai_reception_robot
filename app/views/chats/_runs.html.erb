@@ -1,0 +1,11 @@
+<% @runs.each do |run| %>
+  <article class="conversation-entry" id="<%= dom_id(run) %>" data-run-status="<%= run.status %>">
+    <div class="visitor-message">
+      <div><div class="message-meta"><span>あなた</span><time datetime="<%= run.created_at.iso8601 %>"><%= run.created_at.in_time_zone("Asia/Tokyo").strftime("%H:%M") %></time></div><p class="bubble visitor-bubble"><%= run.input_text %></p></div>
+    </div>
+    <div class="assistant-message">
+      <span class="assistant-avatar"><%= render "shared/robot_icon" %></span>
+      <div><div class="message-meta"><span>受付ガイド</span><span class="preview-label">仮応答</span></div><p class="bubble assistant-bubble <%= "error-bubble" if run.error_code.present? %>"><%= run.response_text.presence || run.status_label %></p><p class="response-caption"><%= PreviewResponse::SCENARIOS.fetch(run.preview_scenario).fetch(:label) %>の表示例 · <%= run.status_label %></p></div>
+    </div>
+  </article>
+<% end %>

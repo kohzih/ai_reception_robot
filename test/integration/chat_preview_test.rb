@@ -1,6 +1,11 @@
 require "test_helper"
+require_relative "../support/robot_queue_test_support"
 
 class ChatPreviewTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+  include RobotQueueTestSupport
+  setup :prepare_test_worker
+  teardown :restore_test_worker
   test "seven fixture responses are stored and rendered without calling Clef" do
     expected = {
       "greeting" => [ "bow", "お辞儀します。" ], "reception" => [ "reception", "受付の方向を示します。" ],
@@ -20,6 +25,7 @@ class ChatPreviewTest < ActionDispatch::IntegrationTest
           post chat_path, params: { robot_run: { input_text: "日本語の表示確認 #{scenario}", preview_scenario: scenario } }
         end
         assert_response :see_other
+        perform_enqueued_jobs
         run = RobotRun.order(:id).last
         assert run.preview?
         if action.nil?
@@ -74,6 +80,7 @@ class ChatPreviewTest < ActionDispatch::IntegrationTest
     payload = '<script>window.__previewXss = true</script><img src=x onerror="alert(1)">'
     post chat_path, params: { robot_run: { input_text: payload, preview_scenario: "unknown" } }
     assert_response :see_other
+    perform_enqueued_jobs
     follow_redirect!
     assert_select ".visitor-bubble", text: payload
     assert_select ".visitor-bubble script, .visitor-bubble img", count: 0
@@ -86,6 +93,7 @@ class ChatPreviewTest < ActionDispatch::IntegrationTest
     first, other = open_session, open_session
     first.post chat_path, params: { robot_run: { input_text: "最初のブラウザだけの入力", preview_scenario: "reception" } }
     run = RobotRun.order(:id).last
+    perform_enqueued_jobs
     other.get root_path
     refute_includes other.response.body, run.input_text
     other.get robot_run_path(run), as: :json
@@ -98,6 +106,7 @@ class ChatPreviewTest < ActionDispatch::IntegrationTest
       input_text: "別のブラウザの入力", preview_scenario: "hall", browser_id: run.browser_id,
       preview: false, status: "completed", response_text: "偽の完了"
     } }
+    perform_enqueued_jobs
     forged = RobotRun.order(:id).last
     refute_equal run.browser_id, forged.browser_id
     assert forged.preview?
@@ -122,5 +131,19 @@ class ChatPreviewTest < ActionDispatch::IntegrationTest
     assert_response :see_other
   ensure
     ActionController::Base.allow_forgery_protection = previous
+  end
+
+  test "JSON submissions return 202 with an owned run and conflicting submissions return 409" do
+    post chat_path, params: { robot_run: { input_text: "こんにちは", preview_scenario: "greeting" } }, as: :json
+    assert_response :accepted
+    run = RobotRun.order(:id).last
+    assert_equal run.id, response.parsed_body["run_id"]
+    assert_equal robot_run_path(run), response.parsed_body["run_url"]
+    assert_equal false, response.parsed_body.dig("screen", "available")
+    assert_no_difference "RobotRun.count" do
+      post chat_path, params: { robot_run: { input_text: "もう一度", preview_scenario: "greeting" } }, as: :json
+    end
+    assert_response :conflict
+    assert_equal run.id, RobotState.singleton.current_run_id
   end
 end

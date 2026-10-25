@@ -11,5 +11,7 @@ Rails.application.routes.draw do
 
   root "chats#index"
   post "chat", to: "chats#create", as: :chat
+  get "chat/state", to: "chats#state", as: :chat_state
+  get "chat/history", to: "chats#history", as: :chat_history
   get "robot_runs/:id", to: "chats#show", as: :robot_run
 end
