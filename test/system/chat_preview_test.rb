@@ -55,6 +55,43 @@ class ChatPreviewSystemTest < ApplicationSystemTestCase
     assert_selector ".visitor-bubble", text: "あ" * 198
   end
 
+  test "Enter sends Shift Enter inserts a newline and IME confirmation never sends" do
+    visit root_path
+    page.execute_script(<<~JS)
+      window.keyboardPosts = 0
+      const original = window.fetch.bind(window)
+      window.fetch = (url, options = {}) => {
+        if (options.method === "POST") window.keyboardPosts += 1
+        return original(url, options)
+      }
+    JS
+    input = find_field("メッセージ")
+    input.send_keys(:enter)
+    assert_field "メッセージ", with: ""
+    input.send_keys("受付", [ :shift, :enter ], "はどこですか？")
+    assert_field "メッセージ", with: "受付\nはどこですか？"
+    [ { isComposing: true }, { keyCode: 229 } ].each do |properties|
+      prevented = page.evaluate_script(<<~JS, input, properties)
+        ((input, properties) => {
+          const event = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true, ...properties })
+          input.dispatchEvent(event)
+          return event.defaultPrevented
+        })(arguments[0], arguments[1])
+      JS
+      refute prevented
+    end
+    page.execute_script('arguments[0].dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", repeat: true, bubbles: true, cancelable: true}))', input)
+    assert_equal 0, page.evaluate_script("window.keyboardPosts")
+    input.send_keys(:enter)
+    assert_selector ".conversation-entry", count: 1
+    assert_text "入力できます"
+    assert_equal "受付\nはどこですか？", RobotRun.uncached { RobotRun.sole.input_text }
+    set_message("あ" * 201)
+    input.send_keys(:enter)
+    assert_button "仮応答を確認", disabled: true
+    assert_equal 1, page.evaluate_script("window.keyboardPosts")
+  end
+
   test "input examples HTML text and narrow screens work without executing HTML" do
     visit root_path
     click_button "受付を探す"

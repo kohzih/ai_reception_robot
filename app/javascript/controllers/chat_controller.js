@@ -42,6 +42,14 @@ export default class extends Controller {
     this.inputTarget.focus()
   }
 
+  keydown(event) {
+    if (event.key !== "Enter" || event.shiftKey || event.isComposing || event.keyCode === 229) return
+    event.preventDefault()
+    if (event.repeat) return
+    this.update()
+    if (!this.submitTarget.disabled) this.inputTarget.form.requestSubmit()
+  }
+
   async send(event) {
     event.preventDefault()
     if (this.submitTarget.disabled || !event.target.reportValidity()) return

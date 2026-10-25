@@ -40,9 +40,9 @@
             <%= form.label :input_text, "メッセージ", class: "field-label" %>
             <% if preview_mode %><div class="scenario-field"><%= form.label :preview_scenario, "確認する仮応答" %><%= form.select :preview_scenario, PreviewResponse::SCENARIOS.map { |key, value| [ value.fetch(:label), key ] }, {}, data: { chat_target: "scenario" } %></div><% end %>
           </div>
-          <%= form.text_area :input_text, rows: 3, required: true, placeholder: "例：参加受付はどこですか？", aria: { describedby: "message-help message-counter", invalid: @robot_run.errors[:input_text].any? }, data: { chat_target: "input", action: "input->chat#update" } %>
+          <%= form.text_area :input_text, rows: 3, required: true, placeholder: "例：参加受付はどこですか？", aria: { describedby: "message-help message-counter", invalid: @robot_run.errors[:input_text].any? }, data: { chat_target: "input", action: "input->chat#update keydown->chat#keydown" } %>
           <div class="composer-footer">
-            <span id="message-help"><%= preview_mode ? "選んだ応答例を表示します。" : "ご案内が終わるまで、そのままお待ちください。" %></span>
+            <span id="message-help">Enterで送信 / Shift+Enterで改行</span>
             <div><span id="message-counter" data-chat-target="counter">0 / <%= RobotRun::MAX_INPUT_CHARACTERS %></span><%= form.button type: "submit", class: "send-button", data: { chat_target: "submit" } do %><%= preview_mode ? "仮応答を確認" : "送信する" %><span aria-hidden="true">↑</span><% end %></div>
           </div>
         <% end %>
