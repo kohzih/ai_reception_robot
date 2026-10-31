@@ -50,35 +50,74 @@ ruby --version
 bin/rails --version
 ```
 
-Railsと各Gemの版は `Gemfile.lock`で固定しています。認証情報はリポジトリへ保存せず、下記のワーカー起動時に対話入力します。
+Railsと各Gemの版は `Gemfile.lock`で固定しています。
 
 ## 起動
 
-コンテナ内のプロジェクトフォルダで起動します。
+講義コンテナ内で3つのターミナルを用意し、以下の順に起動します。Gazebo・Rails・ワーカーは、それぞれのターミナルで起動したままにしてください。
+
+### 1. Gazeboを起動する（コンテナ内・ターミナルA）
 
 ```bash
+cd /home/ubuntu/workspace/ai_reception_robot
+source scripts/load_runtime_env.sh
+DISPLAY=:0 XAUTHORITY=/home/ubuntu/.Xauthority \
+  ros2 launch ./simulation/reception.launch.py
+```
+
+アームと看板が表示され、コントローラーの起動が完了してから次へ進みます。画面右が「受付」、左が「講演会場」です。
+
+### 2. Railsを起動する（コンテナ内・ターミナルB）
+
+```bash
+cd /home/ubuntu/workspace/ai_reception_robot
 source scripts/load_runtime_env.sh
 bundle install
 bin/rails db:prepare
 bin/rails server -b 0.0.0.0 -p 3000
 ```
 
-別のコンテナ内ターミナルで、受付処理用のワーカーも起動します。
+### 3. 受付処理用ワーカーを起動する（コンテナ内・ターミナルC）
 
 ```bash
+cd /home/ubuntu/workspace/ai_reception_robot
 source scripts/load_runtime_env.sh
 bin/robot-worker --interactive
 ```
 
-Cloudflare Account IDとWorkers AI用APIトークンを入力します。トークンは非表示で受け取り、ファイルやコマンド引数へ保存しません。認証情報を同じシェルの環境変数へ設定済みなら `--interactive`を省略できます。認証情報はワーカーで使用し、ロボット用Pythonには渡しません。
+Cloudflare Account IDとWorkers AI用APIトークンを対話入力します。トークンは非表示で、ファイルには保存しません。認証情報を同じシェルの環境変数へ設定済みなら、`--interactive`を省略できます。
 
-Gazeboも起動した状態で、ブラウザから http://localhost:3000 を開きます。画面の入力例を選ぶか、200文字以内でメッセージを入力し、「送信する」またはEnterで送信します。Shift+Enterで改行できます。日本語入力の変換確定では送信しません。案内の定型文、指令送信、動作完了を順番に表示します。動作完了は、Pythonの全段階の成功イベントと正常終了の両方を確認してから表示します。
+### 4. Windowsへの転送を起動する（必要な場合・WSLホスト）
+
+Dockerで3000番を公開していない場合は、コンテナ外のWSLで、共有されたプロジェクトフォルダに移動して実行します。コンテナ名の既定値は `pai_ros2`です。
+
+```bash
+python3 scripts/host/forward_rails_port.py
+```
+
+転送用ターミナルも開いたままにします。コンテナを再起動した場合は、このスクリプトも起動し直してください。
+
+### 5. ブラウザで確認する
+
+Windowsブラウザで http://localhost:3000 を開き、「AI受付モード」「入力できます」が表示されることを確認します。「こんにちは。」を送信すると、アームがお辞儀して正面へ戻ります。講義用デスクトップの http://localhost:6080 からGazeboの画面を確認できます。
+
+### 停止する
+
+送信した処理の完了を確認してから、ワーカー → Rails → Gazebo → 利用していればWSL転送の順に、各ターミナルで `Ctrl+C`を押します。
+
+## チャットの使い方
+
+画面の入力例を選ぶか、200文字以内でメッセージを入力し、「送信する」またはEnterで送信します。Shift+Enterで改行できます。日本語入力の変換確定では送信しません。案内の定型文、指令送信、動作完了を順番に表示します。動作完了は、Pythonの全段階の成功イベントと正常終了の両方を確認してから表示します。
 
 入力と処理状況はDBへ保存し、このブラウザの最近50件を表示します。再読み込み後も履歴と処理状況を確認でき、別のブラウザとは履歴を分けます。処理中は全画面からの追加受付を停止し、画面は約1秒ごとに状態を更新します。
 
-ワーカー停止中は受付できません。APIエラーではロボットへ指令を送らず、再入力を受け付けます。動作失敗や処理中のワーカー停止・再起動では、未完了の処理を自動で再実行せず、確認が済むまで受付を停止します。復帰操作はコンテナ内の管理コマンドから行います。
+## 画面だけを確認する（仮応答モード）
 
 画面表示だけを確認する場合は、Railsを起動するシェルで `export RECEPTION_MODE=preview` を設定し、ワーカーは `bin/jobs start`で起動します。約4秒の仮処理で7種類の応答例を確認でき、APIやロボットは呼び出しません。実動作へ戻すときは `RECEPTION_MODE=live`でRailsを再起動します。モードはサーバーが決定します。
+
+## 動作失敗・中断後の復帰
+
+ワーカー停止中は受付できません。APIエラーではロボットへ指令を送らず、再入力を受け付けます。動作失敗や処理中のワーカー停止・再起動では、未完了の処理を自動で再実行せず、確認が済むまで受付を停止します。復帰操作はコンテナ内の管理コマンドから行います。
 
 異常後の復帰は、ワーカーと同じユーザーで共通環境を読み込み、受付を停止してから行います。
 
@@ -105,7 +144,7 @@ bin/rails runner scripts/robot_admin.rb -- stop-process --run-id 123
 bin/rails runner scripts/robot_admin.rb -- recover --run-id 123 --home
 ```
 
-状態が不明な場合はGazebo一式を停止し、下記の起動方法で再起動してから、`recover`に `--after-simulator-restart`も付けます。新しい関節状態・時計・コントローラー・他の指令送信元を確認し、古いジョブを無効化してから復帰します。失敗時は受付停止を維持します。
+状態が不明な場合はGazebo一式を停止し、「起動」の手順で再起動してから、`recover`に `--after-simulator-restart`も付けます。新しい関節状態・時計・コントローラー・他の指令送信元を確認し、古いジョブを無効化してから復帰します。失敗時は受付停止を維持します。
 
 最後に受付を再開し、実API用ワーカーを起動します。Gazebo再起動直後は `resume`にも `--after-simulator-restart`を付けます。現在の実行IDがない場合は `recover`と `stop-process`を省略できます。
 
@@ -114,19 +153,12 @@ bin/rails runner scripts/robot_admin.rb -- resume
 bin/robot-worker --interactive
 ```
 
-シミュレータは、別のコンテナ内ターミナルで起動します。
-
-```bash
-source scripts/load_runtime_env.sh
-DISPLAY=:0 XAUTHORITY=/home/ubuntu/.Xauthority \
-  ros2 launch ./simulation/reception.launch.py
-```
-
-この起動設定は講義用の机・アームに日本語の看板を加えます。固定カメラから見て右が「受付」、左が「講演会場」です。看板の位置は `simulation/reception.sdf`、カメラは `simulation/gui.config` に保存されています。マウスで視点を変えた場合は、この設定でシミュレータを起動し直すと元の視点に戻ります。
+## Pythonの動作を個別に確認する
 
 Gazebo起動後、別のコンテナ内ターミナルで共通環境を読み込みます。
 
 ```bash
+cd /home/ubuntu/workspace/ai_reception_robot
 source scripts/load_runtime_env.sh
 ```
 
@@ -158,11 +190,16 @@ source scripts/load_runtime_env.sh
 
 各コマンドは1つずつ実行し、正常終了を確認してから次を実行します。アームの移動はシミュレーション時間で2秒、お辞儀は約20度、保持は実時間で0.5秒です。保留時のグリッパー移動はシミュレーション時間で1.5秒、各移動後の保持は実時間で0.4秒です。角度と時間は `config/robot_motion.yml` に保存されています。
 
+看板の位置は `simulation/reception.sdf`、固定カメラは `simulation/gui.config` に保存されています。マウスで視点を変えた場合は、「起動」の手順でシミュレータを起動し直すと元の視点に戻ります。
+
 標準出力はJSON Linesです。`completed`と終了コード0で正常完了を確認できます。`requires_recovery: true`で失敗した場合は、停止状態と正面への復帰を確認するまで再実行を受け付けません。
+
+## Clefの分類を評価する
 
 Clefの分類を確認するには、コンテナ内で次を実行します。
 
 ```bash
+cd /home/ubuntu/workspace/ai_reception_robot
 source scripts/load_ruby_env.sh
 bin/rails runner scripts/verify_clef.rb -- --interactive
 ```
@@ -176,13 +213,3 @@ Cloudflare Account IDとWorkers AI用APIトークンを入力します。トー�
 分類は `greeting`・`reception`・`hall`・`unknown` の4種類です。`unknown`または信頼度が0.5未満の場合は保留の合図を選び、0.5以上では分類に対応する動作を選びます。通信エラーや不正応答の場合は動作を選びません。検証コマンドは分類と動作の選択結果を表示し、ロボットへの指令は送りません。通信の上限は接続5秒・読取り20秒・書込み5秒・リクエスト全体60秒です。分類基準は `config/intent_criteria.json` にあります。[Clef公式仕様](https://developers.cloudflare.com/workers-ai/models/clef/)
 
 判定は入力した1メッセージごとに行い、前の会話を踏まえた対話や複数の案内先への同時案内は行いません。信頼度0.5は動作を選ぶ閾値で、正解確率を保証する値ではありません。対象はGazebo内のアームで、実機・音声入力・来訪者の検出は含みません。
-
-Docker上で3000番を公開していない場合は、コンテナ外のWSLで共有されたプロジェクトフォルダを開き、次を実行します。コンテナ名の既定値は `pai_ros2`です。
-
-```bash
-python3 scripts/host/forward_rails_port.py
-```
-
-Rails・受付処理用ワーカー・転送スクリプトを起動したまま、Windowsブラウザで http://localhost:3000 を開きます。停止はそれぞれ `Ctrl+C`。コンテナ再起動後は転送スクリプトも起動し直してください。
-
-`.env.example`は設定名の一覧で、自動読み込みは行いません。実際のAPIトークン・`config/master.key`・DB・ログ・録画はGitへ登録しません。
