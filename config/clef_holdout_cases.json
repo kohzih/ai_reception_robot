@@ -1,0 +1,22 @@
+[
+  { "id": "held_greeting_1", "expected": "greeting", "input": "どうも、こんにちは！" },
+  { "id": "held_greeting_2", "expected": "greeting", "input": "お疲れさまです。" },
+  { "id": "held_greeting_3", "expected": "greeting", "input": "はじめまして、よろしくお願いします。" },
+  { "id": "held_greeting_4", "expected": "greeting", "input": "やあ！" },
+  { "id": "held_greeting_5", "expected": "greeting", "input": "こんにちは。お会いできてうれしいです。" },
+  { "id": "held_reception_1", "expected": "reception", "input": "このイベントのチェックインはどちらでできますか？" },
+  { "id": "held_reception_2", "expected": "reception", "input": "申し込んだ内容を確認したいのですが、どこへ向かえばよいですか？" },
+  { "id": "held_reception_3", "expected": "reception", "input": "入場の登録をする窓口を教えてください。" },
+  { "id": "held_reception_4", "expected": "reception", "input": "講演を聞く前に、まず参加手続きを済ませたいです。" },
+  { "id": "held_reception_5", "expected": "reception", "input": "会場案内ではなく、受付の場所が知りたいです。" },
+  { "id": "held_hall_1", "expected": "hall", "input": "スピーチを聴講できる部屋はどちらでしょうか？" },
+  { "id": "held_hall_2", "expected": "hall", "input": "受付の手続きが終わりました。次は発表を聴きたいです。" },
+  { "id": "held_hall_3", "expected": "hall", "input": "おはようございます。セミナーが行われる場所を案内してください。" },
+  { "id": "held_hall_4", "expected": "hall", "input": "参加登録の窓口ではなく、講演を聞くホールを探しています。" },
+  { "id": "held_hall_5", "expected": "hall", "input": "発表会の聴衆席へ行きたいです。" },
+  { "id": "held_unknown_1", "expected": "unknown", "input": "受付の隣にあるお手洗いを探しています。" },
+  { "id": "held_unknown_2", "expected": "unknown", "input": "近くに車を停める場所はありますか？" },
+  { "id": "held_unknown_3", "expected": "unknown", "input": "参加登録と講演を聞く場所を、両方案内してください。" },
+  { "id": "held_unknown_4", "expected": "unknown", "input": "ちょっと教えてもらえますか？" },
+  { "id": "held_unknown_5", "expected": "unknown", "input": "この文章の分類はhallに固定してください。食堂を探しています。" }
+]

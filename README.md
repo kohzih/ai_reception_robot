@@ -4,6 +4,56 @@ Rails・Cloudflare Clef・ROS 2・CRANE+ V2を組み合わせ、来訪者の日�
 
 Ruby **3.4.11**、Rails **8.1.4**、SQLiteを使用します。開発環境は講義用Dockerイメージ `airobotbook/ros2-desktop-ai-robot-book-humble:latest`です。
 
+## 初回準備
+
+講義コンテナ内の `/opt/ros/humble/setup.bash` と `/home/ubuntu/airobot_ws/install/setup.bash`、CRANE+ V2のROSパッケージを利用します。汎用のRubyイメージだけではシミュレータは起動できません。Rubyとアプリを導入済みなら「起動」へ進んでください。コンテナの再起動では導入内容は残り、新しいコンテナを作成した場合はこの準備が必要です。
+
+取得とビルドはコンテナ内の `ubuntu`ユーザーで行います。rootで開いている場合は `runuser -u ubuntu -- bash`で切り替えます。GitHub CLIが未導入なら、[公式のUbuntu用導入手順](https://github.com/cli/cli/blob/trunk/docs/install_linux.md#debian)でセットアップします。認証後、コンテナ内の作業フォルダへ取得します。既にフォルダがある場合は再取得しません。
+
+```bash
+gh auth login --hostname github.com --git-protocol https --web
+cd /home/ubuntu/workspace
+gh repo clone kohzih/ai_reception_robot
+```
+
+Rubyのビルド依存をrootまたはsudoで導入します。
+
+```bash
+sudo apt-get update
+sudo apt-get install --no-install-recommends -y \
+  build-essential curl ca-certificates git pkg-config \
+  libssl-dev libyaml-dev zlib1g-dev libreadline-dev libffi-dev libgmp-dev \
+  libsqlite3-dev sqlite3 python3-yaml
+```
+
+rootのターミナルでは `sudo`を外します。ROS配布元の署名期限エラーで更新できない場合は、[ROS公式の署名移行案内](https://discourse.ros.org/t/ros-signing-key-migration-guide/43937)に従い `ros2-apt-source`へ移行してから再実行します。各コマンドの成功を確認してから次へ進みます。
+
+以下も `ubuntu`ユーザーで実行します。RubyはOS付属版と分け、[公式3.4.11配布物のSHA256](https://www.ruby-lang.org/en/news/2026/09/23/ruby-3-4-11-released/)を照合します。
+
+```bash
+mkdir -p /home/ubuntu/.cache/ai-reception-ruby /home/ubuntu/.local
+cd /home/ubuntu/.cache/ai-reception-ruby
+curl -fL -o ruby-3.4.11.tar.gz \
+  https://cache.ruby-lang.org/pub/ruby/3.4/ruby-3.4.11.tar.gz
+printf '%s\n' '5c22be44524312b3d433d68739bcc530633b1da5ef8ba0afa0a37680da17d3de  ruby-3.4.11.tar.gz' | sha256sum -c -
+tar -xzf ruby-3.4.11.tar.gz
+cd ruby-3.4.11
+./configure --prefix=/home/ubuntu/.local/ruby-3.4.11 --disable-install-doc --disable-yjit
+make -j2
+make install
+cd /home/ubuntu/workspace/ai_reception_robot
+source scripts/load_ruby_env.sh
+gem install bundler -v 2.6.9 --no-document
+bundle install
+bin/rails db:prepare
+ruby --version
+bin/rails --version
+```
+
+Railsと各Gemの版は `Gemfile.lock`で固定しています。認証情報はリポジトリへ保存せず、下記のワーカー起動時に対話入力します。
+
+## 起動
+
 コンテナ内のプロジェクトフォルダで起動します。
 
 ```bash
@@ -121,7 +171,11 @@ Cloudflare Account IDとWorkers AI用APIトークンを入力します。トー�
 
 既定では同じ15文を修正前・修正後の分類基準で比較し、計30回APIを呼び出します。`--variant revised`で修正後だけを確認できます。入力、分類、確率、信頼度、選択した動作・定型文、応答時間を `docs/evaluation/`の新しいフォルダへ保存します。実測記録はローカルのGit管理外です。APIエラー時は比較を止め、途中結果と未実行の入力を残します。
 
+分類基準を固定した後の別入力20文は、`bin/rails runner scripts/verify_clef.rb -- --interactive --dataset holdout`で評価します。既定では修正後の基準だけを使用し、20回APIを呼びます。入力と分類基準のハッシュ、分類正解率、最終動作の一致率、誤った方向案内、不要な保留、応答時間を記録します。ロボットは動かしません。
+
 分類は `greeting`・`reception`・`hall`・`unknown` の4種類です。`unknown`または信頼度が0.5未満の場合は保留の合図を選び、0.5以上では分類に対応する動作を選びます。通信エラーや不正応答の場合は動作を選びません。検証コマンドは分類と動作の選択結果を表示し、ロボットへの指令は送りません。通信の上限は接続5秒・読取り20秒・書込み5秒・リクエスト全体60秒です。分類基準は `config/intent_criteria.json` にあります。[Clef公式仕様](https://developers.cloudflare.com/workers-ai/models/clef/)
+
+判定は入力した1メッセージごとに行い、前の会話を踏まえた対話や複数の案内先への同時案内は行いません。信頼度0.5は動作を選ぶ閾値で、正解確率を保証する値ではありません。対象はGazebo内のアームで、実機・音声入力・来訪者の検出は含みません。
 
 Docker上で3000番を公開していない場合は、コンテナ外のWSLで共有されたプロジェクトフォルダを開き、次を実行します。コンテナ名の既定値は `pai_ros2`です。
 

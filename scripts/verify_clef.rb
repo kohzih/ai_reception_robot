@@ -2,11 +2,12 @@ require "io/console"
 require "json"
 require "optparse"
 
-options = { variant: "both", interactive: false }
+options = { variant: nil, dataset: "tuning", interactive: false }
 parser = OptionParser.new do |opts|
-  opts.banner = "使い方: bin/rails runner scripts/verify_clef.rb -- [--interactive] [--variant both|baseline|revised]"
+  opts.banner = "使い方: bin/rails runner scripts/verify_clef.rb -- [--interactive] [--dataset tuning|holdout] [--variant both|baseline|revised]"
   opts.on("--interactive", "認証情報を対話入力する。トークンは非表示で、保存しない。") { options[:interactive] = true }
-  opts.on("--variant NAME", %w[both baseline revised], "比較対象（既定: both、15文×2基準）") { |value| options[:variant] = value }
+  opts.on("--variant NAME", %w[both baseline revised], "比較対象（既定: tuningはboth、holdoutはrevised）") { |value| options[:variant] = value }
+  opts.on("--dataset NAME", %w[tuning holdout], "tuning: 既存15文、holdout: 未使用20文（既定はrevisedだけ）") { |value| options[:dataset] = value }
   opts.on("-h", "--help", "使い方を表示") { puts opts; exit 0 }
 end
 
@@ -32,11 +33,12 @@ begin
   end
   # Validate before creating an evaluation folder or sending any request.
   ClefClient.new(account_id: account_id, api_token: api_token)
-  variants = options[:variant] == "both" ? %w[baseline revised] : [ options[:variant] ]
-  evaluation = ClefEvaluation.new(variants: variants, client_factory: ->(question) {
+  variant = options[:variant] || (options[:dataset] == "holdout" ? "revised" : "both")
+  variants = variant == "both" ? %w[baseline revised] : [ variant ]
+  evaluation = ClefEvaluation.new(variants: variants, dataset: options[:dataset], client_factory: ->(question) {
     ClefClient.new(account_id: account_id, api_token: api_token, question: question)
   })
-  puts "ロボットへの指令は送りません。#{15 * variants.size}回のAPI呼び出しを順番に実行します。"
+  puts "ロボットへの指令は送りません。#{evaluation.dataset}の#{evaluation.request_count}回のAPI呼び出しを順番に実行します。"
   puts "結果の保存先: #{evaluation.directory}"
   $stdout.flush
   evaluation.run { |record| puts JSON.generate(record); $stdout.flush }

@@ -31,9 +31,15 @@ class ClefEvaluationTest < ActiveSupport::TestCase
         assert_equal 1, variant[:wrong_classifications]
         assert_equal 1, variant[:holds]
         assert_equal 0, variant[:wrong_guidance]
+        assert_equal 2, variant[:correct_actions]
+        assert_equal 1.0, variant[:action_accuracy]
+        assert_equal 0, variant[:unnecessary_holds]
+        assert_operator variant[:latency_sec][:median], :>=, 0
       end
       metadata = JSON.parse(evaluation.directory.join("metadata.json").read)
       assert_equal cases, metadata["cases"]
+      assert_equal "custom", metadata["dataset"]
+      assert_equal Digest::SHA256.hexdigest(JSON.generate(cases)), metadata["cases_sha256"]
       refute_equal metadata.dig("questions", "baseline"), metadata.dig("questions", "revised")
       assert_equal %w[baseline revised], metadata["question_sha256"].keys
       rows = evaluation.directory.join("results.jsonl").readlines.map { |line| JSON.parse(line) }
@@ -105,6 +111,36 @@ class ClefEvaluationTest < ActiveSupport::TestCase
       assert_equal 15, manifest.size
       assert_equal 15, manifest.map { |item| item["id"] }.uniq.size
       assert_equal 3, manifest.count { |item| item["id"].start_with?("outside_", "negation_") }
+    end
+  end
+
+  test "held out cases are balanced distinct and have a frozen input manifest" do
+    Dir.mktmpdir do |root|
+      evaluation = ClefEvaluation.new(variants: [ "revised" ], dataset: "holdout", output_root: root,
+        client_factory: ->(_question) { client { |_input| ClefTestData.classification } })
+      assert_equal "holdout", evaluation.dataset
+      assert_equal 20, evaluation.request_count
+      evaluation.run
+      metadata = JSON.parse(evaluation.directory.join("metadata.json").read)
+      assert_equal "holdout", metadata["dataset"]
+      assert_equal 64, metadata["cases_sha256"].length
+      assert_equal({ "greeting" => 5, "reception" => 5, "hall" => 5, "unknown" => 5 }, metadata["cases"].group_by { |r| r["expected"] }.transform_values(&:size))
+      tuning = JSON.parse(Rails.root.join("config/clef_evaluation_cases.json").read)
+      assert_empty metadata["cases"].map { |r| r["input"] } & tuning.map { |r| r["input"] }
+      assert_equal 20, evaluation.summary.dig(:variants, "revised", :attempted)
+    end
+  end
+
+  test "unnecessary holds are distinct from wrong directional guidance" do
+    Dir.mktmpdir do |root|
+      evaluation = ClefEvaluation.new(variants: [ "revised" ], cases: cases, output_root: root,
+        client_factory: ->(_question) { client { |_input| ClefTestData.classification(confidence: 0.4) } })
+      evaluation.run
+      summary = evaluation.summary[:variants]["revised"]
+      assert_equal 2, summary[:holds]
+      assert_equal 1, summary[:unnecessary_holds]
+      assert_equal 0, summary[:wrong_guidance]
+      assert_equal 1, summary[:correct_actions]
     end
   end
 end
